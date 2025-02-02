@@ -25,8 +25,7 @@ pip install -r requirements.txt
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/ForensicID/bike-sharing-analysis.git
-cd bike-sharing-analysis
+git clone https://github.com/Fhriii/Air-Polution-Analysis.git
 ```
 
 2. Run the Streamlit dashboard:
