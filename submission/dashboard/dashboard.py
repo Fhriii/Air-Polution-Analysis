@@ -6,48 +6,35 @@ from pathlib import Path
 
 # fungsi untuk membaca data dari file CSV
 def load_data():
-    # direktori data
     data_dir = Path("submission/data/")
-    
-    # mencari semua file .csv di direktori data
     csv_files = list(data_dir.glob("*.csv"))
     
     if not csv_files:
         st.error("No CSV files found in the data directory.")
         return None
     
-    # inisialisasi list untuk menyimpan dataframe
     df_list = []
     for file in csv_files:
         try:
-            # membaca file csv
             df = pd.read_csv(file)
             station_name = file.stem
-            
-            # membuat kolom DateTime dari kolom tahun, bulan, hari, dan jam
             df["DateTime"] = pd.to_datetime(df[["year", "month", "day", "hour"]])
-            
             if "station" not in df.columns:
                 df["station"] = station_name
-            
-            # menambahkan dataframe ke list
             df_list.append(df)
-            
         except Exception as e:
             st.error(f"Error reading {file.name}: {str(e)}")
     
-    # jika tidak ada dataframe ,tampilkan pesan error
     if not df_list:
         st.error("No data was loaded successfully.")
         return None
     
-    # menggabungkan semua dataframe menjadi satu
     final_df = pd.concat(df_list, ignore_index=True)
-    
     return final_df
 
-# konfigurasi halaman Streamlit
+# Page Configuration
 st.set_page_config(page_title="Air Pollution Analysis", layout="wide")
+
 
 # memuat data
 df = load_data()
@@ -81,38 +68,47 @@ if menu == "Beranda":
 elif menu == "Ringkasan Dataset":
     st.title("Ringkasan Dataset")
     if df is not None:
-        # menampilkan sampel data
-        st.subheader("Contoh Data")
-        st.dataframe(df.head())
+        # Filter based on time range
+        st.subheader("Filter Waktu")
+        start_date = st.date_input("Pilih Tanggal Mulai", value=pd.to_datetime(df["DateTime"]).min())
+        end_date = st.date_input("Pilih Tanggal Akhir", value=pd.to_datetime(df["DateTime"]).max())
+        start_time = st.time_input("Pilih Waktu Mulai", value=pd.to_datetime(df["DateTime"]).min().time())
+        end_time = st.time_input("Pilih Waktu Akhir", value=pd.to_datetime(df["DateTime"]).max().time())
         
-        st.subheader("Stasiun yang Tersedia")
-        station_counts = df['station'].value_counts().reset_index()
+        # Combine date and time to create datetime filters
+        start_datetime = pd.to_datetime(f"{start_date} {start_time}")
+        end_datetime = pd.to_datetime(f"{end_date} {end_time}")
+        
+        # Filter the dataframe based on the selected datetime range
+        df_filtered = df[(df["DateTime"] >= start_datetime) & (df["DateTime"] <= end_datetime)]
+        
+        # Display filtered data
+        st.subheader("Contoh Data (Terfilter)")
+        st.dataframe(df_filtered.head())
+        
+        st.subheader("Stasiun yang Tersedia (Terfilter)")
+        station_counts = df_filtered['station'].value_counts().reset_index()
         station_counts.columns = ['Station', 'Number of Records']
         st.dataframe(station_counts)
         
-        st.subheader("Informasi Dataset")
+        st.subheader("Informasi Dataset (Terfilter)")
         col_info = pd.DataFrame({
-            'Column': df.columns,
-            'Non-Null Count': df.count(),
-            'Data Type': df.dtypes
+            'Column': df_filtered.columns,
+            'Non-Null Count': df_filtered.count(),
+            'Data Type': df_filtered.dtypes
         })
         st.dataframe(col_info)
         
-        # menampilkan statistik ringkasan per stasiun
-        st.subheader("Ringkasan Statistik berdasarkan Stasiun")
-        
-        # memilih stasiun
+        st.subheader("Ringkasan Statistik berdasarkan Stasiun (Terfilter)")
         selected_station = st.selectbox(
             "Pilih Stasiun",
-            options=sorted(df['station'].unique())
+            options=sorted(df_filtered['station'].unique())
         )
         
-        # kolom numerik untuk statistik
         numerical_cols = ['PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3', 'TEMP', 'PRES', 'DEWP', 'RAIN', 'WSPM']
         
-        # menampilkan statistik untuk stasiun yang dipilih
         st.write(f"Stastistik untuk {selected_station}")
-        station_stats = df[df['station'] == selected_station][numerical_cols].describe()
+        station_stats = df_filtered[df_filtered['station'] == selected_station][numerical_cols].describe()
         st.dataframe(station_stats)
         
 # Halaman Pertanyaan Satu
