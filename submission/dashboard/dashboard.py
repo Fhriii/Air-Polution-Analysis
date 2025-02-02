@@ -144,7 +144,7 @@ elif menu == "Pertanyaan 1":
 
 # Halaman Pertanyaan Dua
 elif menu == "Pertanyaan 2":
-    st.title("Apakah ada perbedaan tingkat polusi antara stasiun pemantauan?")
+    st.title("Stasiun pemantauan mana yang memiliki tingkat polusi PM2.5 dan PM10 tertinggi serta terendah berdasarkan data yang ada?")
     
     if df is not None:
         # Analisis rata-rata polusi per stasiun
